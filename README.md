@@ -6,6 +6,8 @@ self-contained and its README carries the numbers measured on that setup.
 
 **Model (Hugging Face):** <https://huggingface.co/vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw> (revision `44c78c9d229b`)
 
+**Engine (ExLlamaV3 fork):** <https://github.com/vcruz305/exllamav3> (commit `10a851291801`)
+
 ## Status
 
 | Setup | Folder | Engine | Status |

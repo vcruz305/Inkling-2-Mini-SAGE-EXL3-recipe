@@ -1,7 +1,7 @@
 # Inkling 2 Mini SAGE EXL3 4.23 bpw on one DGX Spark
 
 Serves [`vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw`](https://huggingface.co/vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw) through TabbyAPI on the
-ExLlamaV3 fork, with the pack's own MTP draft head doing speculative decode. Every number here was
+[ExLlamaV3 fork](https://github.com/vcruz305/exllamav3), with the pack's own MTP draft head doing speculative decode. Every number here was
 measured by running these scripts from an empty directory on the card named at the bottom.
 
 ## Quick start
@@ -127,7 +127,7 @@ prompts was within 5% of the first pass.
 | Component | Pin |
 |---|---|
 | Pack | `vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw` @ `44c78c9d229b43dd45e41506071b9f5f939bed44` |
-| ExLlamaV3 fork | `vcruz305/exllamav3` @ `10a85129180145c888693f222655f79e7d403216` |
+| ExLlamaV3 fork | [`vcruz305/exllamav3`](https://github.com/vcruz305/exllamav3) @ `10a85129180145c888693f222655f79e7d403216` |
 | TabbyAPI | `vcruz305/tabbyAPI` @ `a2898191eed710b55066d699ce829a976b4b3272` |
 | PyTorch / CUDA | torch 2.13.0+cu130, CUDA 13.0 toolkit |
 | Host | Ubuntu 24.04 aarch64, Python 3.12 |
