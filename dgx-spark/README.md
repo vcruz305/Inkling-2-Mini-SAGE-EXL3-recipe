@@ -6,7 +6,7 @@ measured by running these scripts from an empty directory on the card named at t
 
 ## Quick start
 
-Needs one DGX Spark (about 23 GiB of its unified memory at the measured settings), Python 3.10+, `git`, `g++` and the CUDA 13.0 toolkit (`nvcc`).
+Needs one DGX Spark (MemAvailable fell by about 22 GiB at the measured settings), Python 3.10+, `git`, `g++` and the CUDA 13.0 toolkit (`nvcc`).
 Run from this folder:
 
 ```bash
@@ -45,8 +45,8 @@ starting anything.
 
 | Phase | Measured |
 |---|---|
-| `setup.sh` from an empty directory (includes the CUDA extension build) | about 4 minutes |
-| `serve.sh` to endpoint answering, pack already in the page cache | 9 s |
+| `setup.sh` from an empty directory (includes the CUDA extension build) | 3 min 42 s |
+| `serve.sh` to endpoint answering, pack already in the page cache | 9 s (draft on), 6 s (draft off) |
 
 A first start after a download or reboot reads 15 GB from disk and takes longer.
 
@@ -60,7 +60,7 @@ A first start after a download or reboot reads 15 GB from disk and takes longer.
 | Lowest MemAvailable over the run, draft off | 83.6 GiB |
 | Swap growth | none |
 
-Unified memory: `nvidia-smi` reports `[N/A]` for memory on this part, so the figure to watch is `MemAvailable`, sampled once a second (`guard.sh status` prints it). Two unrelated GPU services (about 9 GB) were running on the box during the measurement, so the before-load figures are not an idle machine's.
+Unified memory: `nvidia-smi` reports `[N/A]` for memory on this part, so the figure to watch is `MemAvailable`, sampled once a second (`guard.sh status` prints it). Two unrelated GPU services (about 9 GiB) were running on the box during the measurement, so the before-load figures are not an idle machine's.
 
 ## Measured speed
 
@@ -78,11 +78,11 @@ With the draft on, speed depends on how predictable the text is: the 12 requests
 
 | Prompt | Temp 0, draft on | Temp 0, draft off | Temp 1, draft on | Temp 1, draft off |
 |---|---|---|---|---|
-| code | 93.3 | 51.1 | 86.9 | 50.7 |
+| code | 93.2 | 51.1 | 86.9 | 50.7 |
 | devops | 63.1 | 51.8 | 62.3 | 51.1 |
 | prose | 58.3 | 51.5 | 58.7 | 50.8 |
 
-The server logged 57–69% of drafted tokens accepted per request.
+The server logged 57–69% of drafted tokens accepted per request (51 requests).
 
 Long prompts, temperature 0, one request each, in the order sent:
 
@@ -130,7 +130,7 @@ prompts was within 5% of the first pass.
 | ExLlamaV3 fork | `vcruz305/exllamav3` @ `10a85129180145c888693f222655f79e7d403216` |
 | TabbyAPI | `vcruz305/tabbyAPI` @ `a2898191eed710b55066d699ce829a976b4b3272` |
 | PyTorch / CUDA | torch 2.13.0+cu130, CUDA 13.0 toolkit |
-| Host | aarch64, Python 3.12 |
+| Host | Ubuntu 24.04 aarch64, Python 3.12 |
 
 `SHA256SUMS` is the authority for the pack contents. If the pinned pack revision stops resolving,
 `download_and_verify.sh` falls back to `main` with a warning and the checksums still decide.

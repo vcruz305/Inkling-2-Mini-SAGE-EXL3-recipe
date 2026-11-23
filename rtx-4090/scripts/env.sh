@@ -41,7 +41,7 @@ unset PYTHONPATH   # tool shells sometimes export one for another environment
 # --- serve settings (the measured set; see README "The measured flag set") --------------------
 export HOST="${HOST:-127.0.0.1}"
 export PORT="${PORT:-8000}"
-export MAX_SEQ_LEN="${MAX_SEQ_LEN:-24576}"     # per-request context; 32768 fits a 24 GB card only with nothing else on it
+export MAX_SEQ_LEN="${MAX_SEQ_LEN:-24576}"     # per-request context; the measured setting (peaks at 23,989 MiB; larger is untested)
 export CACHE_SIZE="${CACHE_SIZE:-$MAX_SEQ_LEN}" # KV pool, multiple of 256, >= MAX_SEQ_LEN
 export CACHE_MODE="${CACHE_MODE:-FP16}"        # quantized KV (Q8/Q6/Q4) is untested with this port
 export MAX_BATCH_SIZE="${MAX_BATCH_SIZE:-1}"   # the fast decode path covers one stream only

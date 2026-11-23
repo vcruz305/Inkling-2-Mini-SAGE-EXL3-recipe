@@ -45,21 +45,21 @@ starting anything.
 
 | Phase | Measured |
 |---|---|
-| `setup.sh` from an empty directory (includes the CUDA extension build) | about 9 minutes |
-| `serve.sh` to endpoint answering, pack already in the page cache | 22 s |
+| `setup.sh` from an empty directory (includes the CUDA extension build) | 8 min 22 s |
+| `serve.sh` to endpoint answering, pack already in the page cache | 22 s (draft on), 21 s (draft off) |
 
-A first start after a download or reboot reads 15 GB from disk and takes longer.
+A first start after a download or reboot reads 15 GB from disk and takes longer. On this host the first `serve.sh` call after setup spent 2 min 14 s before launching the server (cause not traced); the second call took 3 s.
 
 ## Measured memory
 
 | Reading | Value |
 |---|---|
-| Loaded, draft on | 20,449 MiB |
+| Loaded, draft on | 20,723 MiB |
 | Peak over the run, draft on (during the 22,839-token prompt) | 23,989 MiB |
-| Loaded, draft off | 19,972 MiB |
+| Loaded, draft off | 19,974 MiB |
 | Peak over the run, draft off | 22,154 MiB |
 
-Readings are `nvidia-smi` totals for the card, sampled once a second, and include about 200 MiB the desktop was already using. The card has 24,564 MiB, so the draft-on peak left about 575 MiB free. If the same card carries other GPU work, start with `DRAFT=off` (about 1.8 GB lower at peak) or a smaller `MAX_SEQ_LEN`; a smaller `MAX_SEQ_LEN` was not measured.
+Readings are `nvidia-smi` totals for the card, sampled about once a second, and include about 200 MiB the desktop was already using. The card has 24,564 MiB, so the draft-on peak left about 575 MiB free. If the same card carries other GPU work, start with `DRAFT=off` (about 1.8 GB lower at peak) or a smaller `MAX_SEQ_LEN`; a smaller `MAX_SEQ_LEN` was not measured.
 
 ## Measured speed
 
@@ -77,11 +77,11 @@ With the draft on, speed depends on how predictable the text is: the 12 requests
 
 | Prompt | Temp 0, draft on | Temp 0, draft off | Temp 1, draft on | Temp 1, draft off |
 |---|---|---|---|---|
-| code | 215.3 | 112.9 | 196.4 | 112.7 |
+| code | 215.2 | 112.9 | 196.4 | 112.7 |
 | devops | 150.6 | 114.2 | 136.4 | 113.5 |
 | prose | 128.0 | 113.4 | 121.2 | 113.6 |
 
-The server logged 59–69% of drafted tokens accepted per request.
+The server logged 59–69% of drafted tokens accepted per request (51 requests).
 
 Long prompts, temperature 0, one request each, in the order sent:
 
