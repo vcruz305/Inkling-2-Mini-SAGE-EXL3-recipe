@@ -33,6 +33,20 @@ Everything installs under `RECIPE_HOME` (default `~/inkling2-exl3`) and the pack
 `MODEL_DIR` (default `~/models/Inkling-2-Mini-SAGE-REXL3-4.23bpw`). The pack is public and
 ungated, so no token is needed.
 
+### The Derisked pack
+
+The same scripts serve [`vcruz305/Inkling-2-Mini-Derisked-SAGE-REXL3-4.24bpw`](https://huggingface.co/vcruz305/Inkling-2-Mini-Derisked-SAGE-REXL3-4.24bpw), the quant of
+`Blackfrost-AI/Inkling-2-Mini-Derisked`. Export these before `download_and_verify.sh` and `serve.sh`:
+
+```bash
+export PACK_REPO=vcruz305/Inkling-2-Mini-Derisked-SAGE-REXL3-4.24bpw
+export PACK_REV=118975225f9f21ebddf590d2705280ba7072479f
+export PACK_NAME=Inkling-2-Mini-Derisked-SAGE-REXL3-4.24bpw
+export PACK_SUMS=SHA256SUMS.derisked
+```
+
+The speed tables in this README were measured on the 4.23 bpw pack.
+
 ## The measured settings
 
 | Setting | Value | Why |

@@ -6,6 +6,8 @@ self-contained and its README carries the numbers measured on that setup.
 
 **Model (Hugging Face):** <https://huggingface.co/vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw> (revision `44c78c9d229b`)
 
+**Derisked model (Hugging Face):** <https://huggingface.co/vcruz305/Inkling-2-Mini-Derisked-SAGE-REXL3-4.24bpw> (revision `118975225f9f`)
+
 **DFlash2 drafter:** <https://huggingface.co/incoai/Inkling-2-Mini-DFlash2> (revision `4f9088ea66c2`)
 
 **Engine (ExLlamaV3 fork):** <https://github.com/vcruz305/exllamav3> (commit `819b039c5703`)
@@ -61,15 +63,17 @@ more than one stream is active.
 
 ## Quants
 
-The pack lives at <https://huggingface.co/vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw>; this table mirrors its model card.
+The packs live at <https://huggingface.co/vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw> and <https://huggingface.co/vcruz305/Inkling-2-Mini-Derisked-SAGE-REXL3-4.24bpw> (the quant of `Blackfrost-AI/Inkling-2-Mini-Derisked`); this table mirrors their model cards.
 
 | bpw | size | smallest card | top-1 vs original | mean KLD | p99 KLD | download |
 |---|---|---|---|---|---|---|
 | 4.23 | 14.00 GiB | 24 GB | 98.33% | 0.0088 | — | `HF_XET_HIGH_PERFORMANCE=1 hf download vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw` |
+| 4.24 (Derisked) | 14.00 GiB | 24 GB | 98.68% | 0.0028 | — | `HF_XET_HIGH_PERFORMANCE=1 hf download vcruz305/Inkling-2-Mini-Derisked-SAGE-REXL3-4.24bpw` |
 
 Top-1 is next-token agreement with the original checkpoint; KLD is KL(reference ‖ pack) on the
 same positions. Both come from the model card, not from this recipe's runs. Each speed figure
-above is tied to one card, one pack and one set of server settings.
+above is tied to one card, one pack (4.23 bpw) and one set of server settings. Each setup's README shows how to
+serve the Derisked pack with the same scripts.
 
 ## Cards tested on
 

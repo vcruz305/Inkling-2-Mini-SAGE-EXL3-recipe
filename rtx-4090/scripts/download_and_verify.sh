@@ -46,12 +46,12 @@ except RevisionNotFoundError:
           "SHA256SUMS decides whether these are the measured files.")
     rev = "main"
 snapshot_download(repo_id=repo, revision=rev, local_dir=dest, max_workers=8,
-                  allow_patterns=[l.split("  ", 1)[1].strip() for l in open(os.path.join(os.environ["RECIPE_ROOT"], "SHA256SUMS"))])
+                  allow_patterns=[l.split("  ", 1)[1].strip() for l in open(os.path.join(os.environ["RECIPE_ROOT"], os.environ.get("PACK_SUMS", "SHA256SUMS")))])
 print("downloaded to", dest)
 PY
 
 echo "Verifying sha256 (two 7 GB shards, about a minute)..."
-( cd "$MODEL_DIR" && sha256sum -c --quiet "$RECIPE_ROOT/SHA256SUMS" ) \
-  && echo "VERIFY PASS: every file matches SHA256SUMS" \
+( cd "$MODEL_DIR" && sha256sum -c --quiet "$RECIPE_ROOT/${PACK_SUMS:-SHA256SUMS}" ) \
+  && echo "VERIFY PASS: every file matches ${PACK_SUMS:-SHA256SUMS}" \
   || { echo "VERIFY FAIL: files differ from the measured pack"; exit 1; }
 if [[ "$DRAFT" == dflash2 ]]; then exec bash "${BASH_SOURCE[0]}" --drafter; fi
