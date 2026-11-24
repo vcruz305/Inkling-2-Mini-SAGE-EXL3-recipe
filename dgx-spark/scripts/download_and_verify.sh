@@ -2,9 +2,27 @@
 # Download the pack with hf_xet high performance into $MODEL_DIR, then verify every file
 # against SHA256SUMS (the authority; taken from the Hub's own LFS hashes at the pinned revision).
 # The repo is public and ungated: no token needed. If HF_TOKEN is set it is used, never printed.
+#   bash scripts/download_and_verify.sh            the pack
+#   bash scripts/download_and_verify.sh --drafter  only the DFlash2 drafter (990 MB), for DRAFT=dflash2
 set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/env.sh"
 [[ -x "$PY" ]] || { echo "Run scripts/setup.sh first (it provides huggingface_hub + hf_xet)."; exit 1; }
+
+if [[ "${1:-}" == "--drafter" ]]; then
+  mkdir -p "$DRAFT_DIR"
+  export HF_XET_HIGH_PERFORMANCE=1 HF_HUB_ENABLE_HF_TRANSFER=0
+  "$PY" - <<'PY'
+import os
+from huggingface_hub import snapshot_download
+snapshot_download(repo_id=os.environ["DRAFT_REPO"], revision=os.environ["DRAFT_REV"], local_dir=os.environ["DRAFT_DIR"],
+                  allow_patterns=[l.split("  ", 1)[1].strip() for l in open(os.path.join(os.environ["RECIPE_ROOT"], "SHA256SUMS.dflash2"))])
+print("downloaded to", os.environ["DRAFT_DIR"])
+PY
+  ( cd "$DRAFT_DIR" && sha256sum -c --quiet "$RECIPE_ROOT/SHA256SUMS.dflash2" ) \
+    && echo "VERIFY PASS: the drafter matches SHA256SUMS.dflash2" \
+    || { echo "VERIFY FAIL: drafter files differ from the measured ones"; exit 1; }
+  exit 0
+fi
 
 NEED=15070275721
 mkdir -p "$MODEL_DIR"

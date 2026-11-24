@@ -9,8 +9,9 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/env.sh"
 (( CACHE_SIZE % 256 == 0 )) || { echo "CACHE_SIZE must be a multiple of 256 (got $CACHE_SIZE)"; exit 1; }
 (( CACHE_SIZE >= MAX_SEQ_LEN )) || { echo "CACHE_SIZE ($CACHE_SIZE) must be >= MAX_SEQ_LEN ($MAX_SEQ_LEN)"; exit 1; }
 case "$CACHE_MODE" in FP16) ;; Q8|Q6|Q4|*,*) echo "NOTE: CACHE_MODE=$CACHE_MODE is untested with the Inkling2Loop port; FP16 is the measured setting." ;; *) echo "bad CACHE_MODE=$CACHE_MODE"; exit 1 ;; esac
-(( MAX_BATCH_SIZE == 1 )) || echo "NOTE: MAX_BATCH_SIZE=$MAX_BATCH_SIZE: two or more concurrent streams leave the fast decode path and the draft (see README, Known limits)."
-case "$DRAFT" in mtp|off) ;; *) echo "bad DRAFT=$DRAFT (mtp or off)"; exit 1 ;; esac
+(( MAX_BATCH_SIZE == 1 )) || echo "NOTE: MAX_BATCH_SIZE=$MAX_BATCH_SIZE: the draft runs only while a single stream is active (see README, Concurrency)."
+[[ "$DRAFT" == dflash2 ]] && (( MAX_BATCH_SIZE > 1 )) && echo "NOTE: DRAFT=dflash2 with MAX_BATCH_SIZE=$MAX_BATCH_SIZE: concurrent streams measured slower than one stream with this drafter loaded. Use DRAFT=mtp or off for concurrency."
+case "$DRAFT" in mtp|dflash2|off) ;; *) echo "bad DRAFT=$DRAFT (mtp, dflash2 or off)"; exit 1 ;; esac
 if [[ "$HOST" == 127.0.0.1 || "$HOST" == localhost ]]; then DISABLE_AUTH=true; else DISABLE_AUTH=false; fi
 
 CONFIG=$(cat <<YAML
@@ -38,6 +39,8 @@ YAML
 )
 # The draft head is a component of the pack itself: no draft_model_name, no second download.
 [[ "$DRAFT" == mtp ]] && CONFIG+=$'\ndraft_model:\n  draft_mode: mtp'
+# DFlash2 is a separate model directory; it loads alongside the target and reads its hidden states.
+[[ "$DRAFT" == dflash2 ]] && CONFIG+=$'\ndraft_model:\n  draft_mode: model\n  draft_model_dir: '"$RUN_DIR/draft"$'\n  draft_model_name: '"$DRAFT_NAME"
 
 knob_line=""
 for k in "${INKLING_KNOBS[@]}"; do
@@ -53,6 +56,9 @@ fi
 
 [[ -x "$PY" ]] || { echo "Run scripts/setup.sh first."; exit 1; }
 [[ -f "$MODEL_DIR/config.json" ]] || { echo "Pack not found at $MODEL_DIR. Run scripts/download_and_verify.sh."; exit 1; }
+if [[ "$DRAFT" == dflash2 && ! -f "$DRAFT_DIR/model.safetensors" ]]; then
+  echo "DFlash2 drafter not found at $DRAFT_DIR. Run: bash scripts/download_and_verify.sh --drafter"; exit 1
+fi
 if [[ -f "$RECIPE_HOME/.exl3_ref" && "$(cat "$RECIPE_HOME/.exl3_ref")" != "$EXL3_REF" ]]; then
   echo "WARNING: runtime was built at $(cat "$RECIPE_HOME/.exl3_ref"), env.sh pins $EXL3_REF. Re-run scripts/setup.sh."
 fi
@@ -67,6 +73,7 @@ fi
 # Serve from a directory holding one symlink, so /v1/models lists exactly this pack.
 mkdir -p "$RUN_DIR/models"
 ln -sfn "$MODEL_DIR" "$RUN_DIR/models/$PACK_NAME"
+if [[ "$DRAFT" == dflash2 ]]; then mkdir -p "$RUN_DIR/draft"; ln -sfn "$DRAFT_DIR" "$RUN_DIR/draft/$DRAFT_NAME"; fi
 echo "$CONFIG" > "$RUN_DIR/config.yml"
 
 # WSL2 and many desktops default to 1024 open files; the CUDA driver then fails mid-load with

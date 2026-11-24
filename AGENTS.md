@@ -9,9 +9,11 @@ Do NOT:
   draft exist only in the pinned fork commit; `bash scripts/setup.sh --check`
   verifies the import)
 - install TabbyAPI's GPU extras (they replace torch and the fork)
-- set `draft_model_name` or download a separate draft model (the draft head is
-  inside the pack; `DRAFT=mtp` is the default, `DRAFT=off` disables it)
-- raise `MAX_BATCH_SIZE` above 1 and quote the single-stream numbers
+- hand-edit `draft_model_name` (`DRAFT=mtp` is the default and needs no second
+  model; `DRAFT=dflash2` after `download_and_verify.sh --drafter` uses the
+  DFlash2 drafter; `DRAFT=off` disables drafting)
+- serve concurrent streams with `DRAFT=dflash2`, or quote the single-stream
+  numbers for `MAX_BATCH_SIZE` above 1
 - raise `MAX_SEQ_LEN` above 24576 without measuring memory first
 - print or commit HF tokens anywhere
 
