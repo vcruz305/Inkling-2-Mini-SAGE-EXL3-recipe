@@ -7,7 +7,7 @@
 # draft head, the DFlash2 drafter hookup and the multi-stream token step). The speed numbers in
 # the README were measured on this commit.
 export EXL3_REPO="${EXL3_REPO:-https://github.com/vcruz305/exllamav3.git}"
-export EXL3_REF="${EXL3_REF:-819b039c5703ece8dec7c0ac0f4fe4e6ec0ec9c1}"
+export EXL3_REF="${EXL3_REF:-c702887ba7be368e1714339dd755a7c3c9b263d5}"
 # TabbyAPI fork main (upstream main plus the Inkling 2 message format). Stock TabbyAPI has no
 # parser for this model's replies and returns raw message markup.
 export TABBY_REPO="${TABBY_REPO:-https://github.com/vcruz305/tabbyAPI.git}"
@@ -47,7 +47,7 @@ unset PYTHONPATH   # tool shells sometimes export one for another environment
 # --- serve settings (the measured set; see README "The measured flag set") --------------------
 export HOST="${HOST:-127.0.0.1}"
 export PORT="${PORT:-8000}"
-export MAX_SEQ_LEN="${MAX_SEQ_LEN:-24576}"     # per-request context; the measured setting (peaks at 23,989 MiB; larger is untested)
+export MAX_SEQ_LEN="${MAX_SEQ_LEN:-24576}"     # per-request context; the most a 24 GB card holds with the FP16 cache (peaks at 23,989 MiB)
 export CACHE_SIZE="${CACHE_SIZE:-$MAX_SEQ_LEN}" # KV pool, multiple of 256, >= MAX_SEQ_LEN
 export CACHE_MODE="${CACHE_MODE:-FP16}"        # quantized KV (Q8/Q6/Q4) is untested with this port
 export MAX_BATCH_SIZE="${MAX_BATCH_SIZE:-1}"   # concurrent streams; above 1 the draft runs only while one stream is active
@@ -98,6 +98,8 @@ if not hasattr(getattr(dflash2, "DFlash2Selector", None), "walk_scored"):
     problems.append("the DFlash2 drafter predates the pinned commit (no Inkling 2 target support)")
 if "step_seqs" not in open(os.path.join(os.path.dirname(where), "architecture", "inkling2_loop.py")).read():
     problems.append("this exllamav3 predates the multi-stream token step")
+if "graph_capture" not in open(os.path.join(os.path.dirname(where), "architecture", "inkling2_mtp.py")).read():
+    problems.append("this exllamav3 predates the long-context fixes of the pinned commit")
 if not torch.cuda.is_available():
     problems.append("torch reports no CUDA device")
 if problems:

@@ -10,7 +10,6 @@ source "$(dirname -- "${BASH_SOURCE[0]}")/env.sh"
 (( CACHE_SIZE >= MAX_SEQ_LEN )) || { echo "CACHE_SIZE ($CACHE_SIZE) must be >= MAX_SEQ_LEN ($MAX_SEQ_LEN)"; exit 1; }
 case "$CACHE_MODE" in FP16) ;; Q8|Q6|Q4|*,*) echo "NOTE: CACHE_MODE=$CACHE_MODE is untested with the Inkling2Loop port; FP16 is the measured setting." ;; *) echo "bad CACHE_MODE=$CACHE_MODE"; exit 1 ;; esac
 (( MAX_BATCH_SIZE == 1 )) || echo "NOTE: MAX_BATCH_SIZE=$MAX_BATCH_SIZE: the draft runs only while a single stream is active (see README, Concurrency)."
-[[ "$DRAFT" == dflash2 ]] && (( MAX_BATCH_SIZE > 1 )) && echo "NOTE: DRAFT=dflash2 with MAX_BATCH_SIZE=$MAX_BATCH_SIZE: concurrent streams measured slower than one stream with this drafter loaded. Use DRAFT=mtp or off for concurrency."
 case "$DRAFT" in mtp|dflash2|off) ;; *) echo "bad DRAFT=$DRAFT (mtp, dflash2 or off)"; exit 1 ;; esac
 if [[ "$HOST" == 127.0.0.1 || "$HOST" == localhost ]]; then DISABLE_AUTH=true; else DISABLE_AUTH=false; fi
 

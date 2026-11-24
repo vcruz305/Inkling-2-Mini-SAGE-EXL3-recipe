@@ -7,7 +7,7 @@ measured by running these scripts from an empty directory on the card named at t
 
 ## Quick start
 
-Needs one DGX Spark (MemAvailable fell by about 25 GiB at the measured settings), Python 3.10+, `git`, `g++` and the CUDA 13.0 toolkit (`nvcc`).
+Needs one DGX Spark (MemAvailable fell by about 68 GiB at the measured settings, `MAX_SEQ_LEN=262144`), Python 3.10+, `git`, `g++` and the CUDA 13.0 toolkit (`nvcc`).
 Run from this folder:
 
 ```bash
@@ -51,8 +51,8 @@ The speed tables in this README were measured on the 4.23 bpw pack.
 
 | Setting | Value | Why |
 |---|---|---|
-| `DRAFT` | `dflash2` | Speculative decode with the separate DFlash2 drafter. `DRAFT=mtp` uses the draft head inside the pack (`mtp.safetensors`) and becomes the default when `MAX_BATCH_SIZE` is above 1; `DRAFT=off` serves one token per step. |
-| `MAX_SEQ_LEN` / `CACHE_SIZE` | 24576 / 24576 | The context every number below was taken at. Larger values are untested here. |
+| `DRAFT` | `dflash2` | Speculative decode with the separate DFlash2 drafter. `DRAFT=mtp` uses the draft head inside the pack (`mtp.safetensors`); `DRAFT=off` serves one token per step. |
+| `MAX_SEQ_LEN` / `CACHE_SIZE` | 262144 / 262144 | The context every number below was taken at. The model allows 1,048,576; larger values were not run here. Lower it to save memory (about 0.19 GiB per 1,024 tokens). |
 | `CACHE_MODE` | `FP16` | The only KV cache type tested with this architecture. |
 | `CHUNK_SIZE` | 2048 | Prefill chunk used for the prefill figures. |
 | `MAX_BATCH_SIZE` | 1 | The single-stream numbers were taken at 1. Raise it for concurrent streams (see Concurrency, measured at 4). |
@@ -76,51 +76,58 @@ A first start after a download or reboot reads 15 GB from disk and takes longer.
 
 | Reading | DFlash2 | MTP | Off |
 |---|---|---|---|
-| MemAvailable before load | 115.3 GiB | 118.9 GiB | 118.8 GiB |
-| Lowest MemAvailable over the run | 93.2 GiB | 93.8 GiB | 95.3 GiB |
+| MemAvailable before load | 114.7 GiB | 118.2 GiB | 118.2 GiB |
+| Lowest MemAvailable over the run | 48.1 GiB | 49.9 GiB | 51.1 GiB |
 | Swap growth | none | none | none |
 
-Unified memory: `nvidia-smi` reports `[N/A]` for memory on this part, so the figure to watch is `MemAvailable`, sampled once a second (`guard.sh status` prints it). The lowest reading falls during the 22,839-token prompt.
+At `MAX_SEQ_LEN=262144` the server holds about 68 GiB from load onward: the pack plus an FP16 cache of about 0.19 GiB per 1,024 tokens of `CACHE_SIZE`. The DFlash2 column includes the 94,235-token prompt. Unified memory: `nvidia-smi` reports `[N/A]` for memory on this part, so the figure to watch is `MemAvailable`, sampled once a second (`guard.sh status` prints it). If the Spark carries other work, lower `MAX_SEQ_LEN`: 24,576 holds about 25 GiB.
 
 ## Measured speed
 
-Server-side counters from TabbyAPI's `usage` block, one request at a time, streamed.
+Server-side counters from TabbyAPI's `usage` block, one request at a time, streamed, at `MAX_SEQ_LEN=262144`.
 `scripts/bench.py` produced all of them: three short prompts (code, devops, prose), 300 new
 tokens each, 4 repeats. Each draft setting was its own server start in the same session.
 
 | Decode, short prompts | `DRAFT=dflash2` | `DRAFT=mtp` | `DRAFT=off` |
 |---|---|---|---|
-| Temperature 0, median of 12 | **66.6 tok/s** | 61.3 tok/s | 50.2 tok/s |
-| Temperature 1, median of 12 | 61.4 tok/s | 61.9 tok/s | 50.2 tok/s |
+| Temperature 0, median of 12 | **75.4** tok/s | 66.4 tok/s | 51.2 tok/s |
+| Temperature 1, median of 12 | **62.3** tok/s | 59.3 tok/s | 51.2 tok/s |
 
 With a draft on, speed depends on how predictable the text is. Per prompt, median of 4, tok/s:
 
 | Prompt | Temp 0, DFlash2 | Temp 0, MTP | Temp 0, off | Temp 1, DFlash2 | Temp 1, MTP | Temp 1, off |
 |---|---|---|---|---|---|---|
-| code | **108.8** | 90.6 | 50.0 | **101.8** | 89.3 | 50.0 |
-| devops | 66.6 | 61.3 | 50.5 | 60.7 | 61.9 | 50.4 |
-| prose | 57.5 | 56.7 | 50.2 | 55.2 | 54.5 | 50.2 |
+| code | **112.8** | 93.2 | 51.0 | **94.8** | 90.4 | 51.0 |
+| devops | **75.4** | 66.4 | 51.4 | **62.3** | 59.2 | 51.5 |
+| prose | **61.4** | 59.0 | 51.2 | 54.9 | **57.9** | 51.2 |
 
-The 12 requests ranged 57.0–108.9 tok/s (DFlash2) and 56.3–90.8 (MTP) at temperature 0, and
-50.1–112.1 and 54.2–92.4 at temperature 1. On this setup DFlash2 is the faster drafter on code
-and about level with MTP on prose and at temperature 1.
+The 12 requests ranged 60.9–113.3 tok/s (DFlash2) and 58.8–93.4 (MTP) at temperature 0, and
+51.8–109.3 and 55.5–98.1 at temperature 1. On this setup DFlash2 is the faster drafter at temperature 0 and on code;
+at temperature 1 the two are close on devops and prose.
 
 Prefill and long prompts, temperature 0, one request each, in the order sent:
 
 | Prompt tokens | Draft | Prefill | Decode | Time to first token |
 |---|---|---|---|---|
-| 9,159 (first) | dflash2 | 583 tok/s | 67.4 tok/s | 15.94 s |
-| 9,159 (first) | mtp | 584 tok/s | 62.4 tok/s | 15.84 s |
-| 9,159 (first) | off | 586 tok/s | 45.5 tok/s | 15.75 s |
-| 22,839 | dflash2 | 444 tok/s | 50.4 tok/s | 51.72 s |
-| 22,839 | mtp | 444 tok/s | 58.5 tok/s | 51.61 s |
-| 22,839 | off | 445 tok/s | 41.5 tok/s | 51.43 s |
-| 9,159 (after the 22,839 one) | dflash2 | 584 tok/s | 59.0 tok/s | 15.90 s |
-| 9,159 (after the 22,839 one) | mtp | 582 tok/s | 59.9 tok/s | 15.86 s |
-| 9,159 (after the 22,839 one) | off | 587 tok/s | 45.5 tok/s | 15.70 s |
+| 9,159 (first) | dflash2 | 656 tok/s | 59.5 tok/s | 14.19 s |
+| 9,159 (first) | mtp | 670 tok/s | 67.5 tok/s | 13.80 s |
+| 9,159 (first) | off | 672 tok/s | 46.4 tok/s | 13.72 s |
+| 22,839 | dflash2 | 623 tok/s | 47.1 tok/s | 36.90 s |
+| 22,839 | mtp | 624 tok/s | 56.7 tok/s | 36.79 s |
+| 22,839 | off | 626 tok/s | 42.5 tok/s | 36.63 s |
+| 9,159 (after the 22,839 one) | dflash2 | 670 tok/s | 60.5 tok/s | 13.88 s |
+| 9,159 (after the 22,839 one) | mtp | 671 tok/s | 66.9 tok/s | 13.75 s |
+| 9,159 (after the 22,839 one) | off | 675 tok/s | 46.3 tok/s | 13.68 s |
+| 94,235 | dflash2 | 425 tok/s | 26.8 tok/s | 222.41 s |
+| 9,159 (after the 94,235 one) | dflash2 | 658 tok/s | 69.9 tok/s | 14.13 s |
 
-Prefill is the server counter; time to first token is client-side and includes it. Neither draft
-changes prefill beyond run-to-run variation.
+Prefill is the server counter; time to first token is client-side and includes it.
+
+The 94,235-token request was sent with `DRAFT=dflash2` only. Prefill slows as the context fills,
+because every new token attends to all earlier ones on the global layers: a 2,048-token chunk
+runs at about 620 tok/s at 8k of context, 355 at 65k and 105 at 262k (direct engine measurement,
+not through the server). Decode slows the same way: about 46, 33 and 17 tok/s without a draft at
+those depths. A prompt that fills the whole 262,144 context was not run end to end.
 
 ## Concurrency
 
@@ -128,19 +135,16 @@ changes prefill beyond run-to-run variation.
 `scripts/bench_concurrency.py` produced these; totals are all streams together, first token to
 last token, client-side.
 
-| Streams at once | `DRAFT=mtp` total | `DRAFT=off` total | Per stream |
-|---|---|---|---|
-| 1 | 56.8–90.6 tok/s | 50.4–51.3 tok/s | the same |
-| 2 | 68.8–72.5 tok/s | 69.0–73.2 tok/s | about 35–36 tok/s |
-| 4 | 91.9–97.7 tok/s | 98.0–101.7 tok/s | about 24–25 tok/s |
+| Streams at once | `DRAFT=mtp` total | `DRAFT=dflash2` total | `DRAFT=off` total | Per stream |
+|---|---|---|---|---|
+| 1 | 59.3–93.6 tok/s | 61.1–117.1 tok/s | 51.2–51.9 tok/s | the same |
+| 2 | 69.7–72.9 tok/s | 71.0–73.0 tok/s | 69.9–74.2 tok/s | about 35–37 tok/s |
+| 4 | 99.1–99.3 tok/s | 95.4–100.4 tok/s | 96.6–100.0 tok/s | about 24–26 tok/s |
 
-The MTP draft runs while one stream is active, stands down when a second arrives, and resumes
-afterwards (single-stream speed after the 4-stream rounds: 56.8–90.5 tok/s). With two or more
-streams the draft setting therefore makes no difference.
-
-**Concurrent serving uses `DRAFT=mtp` (automatic when `MAX_BATCH_SIZE` is above 1) or `off`, not `dflash2`.** With the DFlash2 drafter
-loaded, concurrent streams were slower than one stream: 38.2–52.3 tok/s total at 2 streams and
-46.4–50.3 at 4. Its single-stream speed at `MAX_BATCH_SIZE=4` was unaffected (57.8–111.4 tok/s).
+Either drafter runs while one stream is active, stands down when a second arrives, and resumes
+afterwards, so with two or more streams the draft setting makes no difference. The first request
+after a start is slower and is left out of the single-stream row. Time to first token was
+0.32–0.70 s at 2 streams and 0.54–1.43 s at 4.
 
 ## Correctness checks in the same run
 
@@ -154,18 +158,17 @@ loaded, concurrent streams were slower than one stream: 38.2–52.3 tok/s total 
 - **Sampler settings beyond temperature draft the old way.** Requests that set only a temperature use speculative sampling (a draft is kept with probability min(1, p/q)). Requests that add top-k, top-p, min-p or penalties still draft, but greedily with exact-match acceptance, so they gain less above temperature 0.
 - **Draft-on output is not token-identical to draft-off.** Greedy text can diverge because verification runs several positions in one batch.
 - **Constrained output (JSON schema, grammar) was not tested** through this recipe.
-- **No drafting under concurrency.** With two or more streams active the MTP draft stands down, and DFlash2 slows concurrent streams (see Concurrency).
+- **No drafting under concurrency.** With two or more streams active either drafter stands down and decode is one token per step per stream (see Concurrency).
 - **Concurrent streams are not token-identical to a single stream.** Greedy text can diverge partway, because several streams share one batched step.
 - **DFlash2 uses speculative sampling only for temperature-only requests**, the same rule as MTP in the first item.
 - **Image input was not tested** through this recipe.
-- **Context above 24,576 was not measured** on this setup.
+- **Long prompts take minutes.** A 94,235-token prompt took 222 s to first token; a prompt filling the whole 262,144 context was not run end to end (estimated at about 25 minutes from the per-depth rates).
 
 ## Do not
 
 - `pip install exllamav3` or use a stock wheel: the Inkling2Loop architecture and the draft head exist only in the fork commit pinned in `scripts/env.sh`. `bash scripts/setup.sh --check` verifies the import.
 - Install TabbyAPI's GPU extras: they replace torch and the fork.
 - Hand-edit `draft_model_name`: `DRAFT=dflash2` wires the drafter in for you, and `DRAFT=mtp` needs no second model.
-- Force `DRAFT=dflash2` together with `MAX_BATCH_SIZE` above 1.
 
 ## Runtime identity
 
@@ -173,7 +176,7 @@ loaded, concurrent streams were slower than one stream: 38.2–52.3 tok/s total 
 |---|---|
 | Pack | `vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw` @ `44c78c9d229b43dd45e41506071b9f5f939bed44` |
 | DFlash2 drafter (default draft) | [`incoai/Inkling-2-Mini-DFlash2`](https://huggingface.co/incoai/Inkling-2-Mini-DFlash2) @ `4f9088ea66c21f2b99ed657d1941c306b03e84d2` |
-| ExLlamaV3 fork | [`vcruz305/exllamav3`](https://github.com/vcruz305/exllamav3) @ `819b039c5703ece8dec7c0ac0f4fe4e6ec0ec9c1` |
+| ExLlamaV3 fork | [`vcruz305/exllamav3`](https://github.com/vcruz305/exllamav3) @ `c702887ba7be368e1714339dd755a7c3c9b263d5` |
 | TabbyAPI | `vcruz305/tabbyAPI` @ `a2898191eed710b55066d699ce829a976b4b3272` |
 | PyTorch / CUDA | torch 2.13.0+cu130, CUDA 13.0 toolkit |
 | Host | Ubuntu 24.04 aarch64, Python 3.12 |

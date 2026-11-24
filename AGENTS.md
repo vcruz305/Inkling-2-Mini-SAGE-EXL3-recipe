@@ -12,9 +12,10 @@ Do NOT:
 - hand-edit `draft_model_name` (the default draft is `mtp` in `rtx-4090/` and
   `dflash2` in `dgx-spark/`; `download_and_verify.sh` fetches the DFlash2
   drafter when it is selected; `DRAFT=off` disables drafting)
-- serve concurrent streams with `DRAFT=dflash2`, or quote the single-stream
-  numbers for `MAX_BATCH_SIZE` above 1
-- raise `MAX_SEQ_LEN` above 24576 without measuring memory first
+- quote the single-stream numbers for `MAX_BATCH_SIZE` above 1 (either drafter
+  stands down while more than one stream is active)
+- raise `MAX_SEQ_LEN` in `rtx-4090/` above 24576 (it does not fit the card), or
+  in `dgx-spark/` above 262144 without measuring memory first
 - print or commit HF tokens anywhere
 
 Exact commands: see the setup folder's README, "Quick start".

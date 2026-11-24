@@ -10,7 +10,7 @@ self-contained and its README carries the numbers measured on that setup.
 
 **DFlash2 drafter:** <https://huggingface.co/incoai/Inkling-2-Mini-DFlash2> (revision `4f9088ea66c2`)
 
-**Engine (ExLlamaV3 fork):** <https://github.com/vcruz305/exllamav3> (commit `819b039c5703`)
+**Engine (ExLlamaV3 fork):** <https://github.com/vcruz305/exllamav3> (commit `c702887ba7be`)
 
 ## Status
 
@@ -36,29 +36,29 @@ The API is OpenAI-compatible at `http://127.0.0.1:8000/v1`. Requests that set no
 
 ## Measured speed
 
-24,576 context, FP16 cache, server-side counters, 300 new tokens per request. Decode figures are
-single stream; the short-prompt column is the median of 12 requests (code, devops, prose), and
-the code and prose columns are per-prompt medians of 4. Long-prompt rows, memory and the
-temperature-1 per-prompt figures are in each folder.
+FP16 cache, server-side counters, 300 new tokens per request. `rtx-4090/` serves 24,576 tokens of
+context and `dgx-spark/` 262,144. Decode figures are single stream; the short-prompt column is the
+median of 12 requests (code, devops, prose), and the code and prose columns are per-prompt medians
+of 4. Long-prompt rows, memory and the per-prompt figures are in each folder.
 
 | Setup | Draft | Temp 0, all | Temp 0, code | Temp 0, prose | Temp 1, all | Temp 1, code | Temp 1, prose |
 |---|---|---|---|---|---|---|---|
-| `rtx-4090/` | MTP | **152.8** | **217.7** | 128.0 | **138.7** | **204.0** | 121.2 |
-| `rtx-4090/` | DFlash2 | 105.9 | 178.3 | 77.8 | 80.8 | 138.5 | 72.7 |
-| `rtx-4090/` | off | 113.6 | 112.9 | 113.8 | 113.8 | 113.7 | 113.8 |
-| `dgx-spark/` | DFlash2 | **66.6** | **108.8** | 57.5 | 61.4 | **101.8** | 55.2 |
-| `dgx-spark/` | MTP | 61.3 | 90.6 | 56.7 | 61.9 | 89.3 | 54.5 |
-| `dgx-spark/` | off | 50.2 | 50.0 | 50.2 | 50.2 | 50.0 | 50.2 |
+| `rtx-4090/` | MTP | 148.6 | 217.3 | 128.7 | 132.3 | 210.1 | 122.0 |
+| `rtx-4090/` | DFlash2 | 107.5 | 170.9 | 82.9 | 80.4 | 153.4 | 74.5 |
+| `rtx-4090/` | off | 113.0 | 112.9 | 113.1 | 113.5 | 113.4 | 113.6 |
+| `dgx-spark/` | DFlash2 | 75.4 | 112.8 | 61.4 | 62.3 | 94.8 | 54.9 |
+| `dgx-spark/` | MTP | 66.4 | 93.2 | 59.0 | 59.3 | 90.4 | 57.9 |
+| `dgx-spark/` | off | 51.2 | 51.0 | 51.2 | 51.2 | 51.0 | 51.2 |
 
-All figures in tok/s. MTP is the faster drafter in `rtx-4090/`; DFlash2 is the faster one on
-code in `dgx-spark/` and level with MTP elsewhere there.
+All figures in tok/s. MTP is the faster drafter in `rtx-4090/`; DFlash2 is the faster one at
+temperature 0 in `dgx-spark/`.
 
-| Setup | Prefill, 9,159-token prompt | Prefill, 22,839-token prompt | 2 streams, total | 4 streams, total |
-|---|---|---|---|---|
-| `rtx-4090/` | 1,329–1,440 tok/s | 1,162–1,245 tok/s | 164–171 tok/s | 207–266 tok/s |
-| `dgx-spark/` | 582–587 tok/s | 444–445 tok/s | 69–73 tok/s | 92–102 tok/s |
+| Setup | Prefill, 9,159-token prompt | Prefill, 22,839-token prompt | Prefill, 94,235-token prompt | 2 streams, total | 4 streams, total |
+|---|---|---|---|---|---|
+| `rtx-4090/` | 1,253–1,489 tok/s | 1,476–1,507 tok/s | does not fit | 164–172 tok/s | 226–270 tok/s |
+| `dgx-spark/` | 656–675 tok/s | 623–626 tok/s | 425 tok/s | 70–74 tok/s | 95–100 tok/s |
 
-Concurrency rows are `MAX_BATCH_SIZE=4` with `DRAFT=mtp` or `off`; the draft stands down while
+Concurrency rows are `MAX_BATCH_SIZE=4` with any draft setting; either drafter stands down while
 more than one stream is active.
 
 ## Quants
