@@ -31,10 +31,10 @@ model:
   cache_mode: $CACHE_MODE
   chunk_size: $CHUNK_SIZE
   max_batch_size: $MAX_BATCH_SIZE
-# Fallbacks for clients that send no sampler values (agent frameworks). The pack's
-# generation_config.json sets temperature 1.0 and nothing else; client values still win.
+# Fallback for clients that send no sampler values (agent frameworks); client values still win.
+# The pack's generation_config.json sets temperature 1.0 and nothing else.
 sampling:
-  temperature: {override: 1.0, force: false}
+  temperature: {override: $TEMPERATURE, force: false}
 YAML
 )
 # The draft head is a component of the pack itself: no draft_model_name, no second download.
@@ -80,7 +80,7 @@ echo "$CONFIG" > "$RUN_DIR/config.yml"
 # "CUDA driver error: unknown error". The fork raises the limit at import too; this covers Tabby.
 ulimit -n 65536 2>/dev/null || ulimit -n "$(ulimit -Hn)" 2>/dev/null || true
 
-echo "serving $PACK_NAME on http://$HOST:$PORT/v1  ctx=$MAX_SEQ_LEN cache=$CACHE_SIZE $CACHE_MODE batch=$MAX_BATCH_SIZE draft=$DRAFT"
+echo "serving $PACK_NAME on http://$HOST:$PORT/v1  ctx=$MAX_SEQ_LEN cache=$CACHE_SIZE $CACHE_MODE batch=$MAX_BATCH_SIZE draft=$DRAFT temperature-fallback=$TEMPERATURE"
 echo "knobs:$knob_line"
 cd "$RECIPE_HOME/tabbyAPI"
 if [[ "${FOREGROUND:-0}" == 1 ]]; then exec "$PY" main.py --config "$RUN_DIR/config.yml"; fi

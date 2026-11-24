@@ -2,7 +2,7 @@
 # Download the pack with hf_xet high performance into $MODEL_DIR, then verify every file
 # against SHA256SUMS (the authority; taken from the Hub's own LFS hashes at the pinned revision).
 # The repo is public and ungated: no token needed. If HF_TOKEN is set it is used, never printed.
-#   bash scripts/download_and_verify.sh            the pack
+#   bash scripts/download_and_verify.sh            the pack, plus the drafter when DRAFT=dflash2
 #   bash scripts/download_and_verify.sh --drafter  only the DFlash2 drafter (990 MB), for DRAFT=dflash2
 set -euo pipefail
 source "$(dirname -- "${BASH_SOURCE[0]}")/env.sh"
@@ -54,3 +54,4 @@ echo "Verifying sha256 (two 7 GB shards, about a minute)..."
 ( cd "$MODEL_DIR" && sha256sum -c --quiet "$RECIPE_ROOT/SHA256SUMS" ) \
   && echo "VERIFY PASS: every file matches SHA256SUMS" \
   || { echo "VERIFY FAIL: files differ from the measured pack"; exit 1; }
+if [[ "$DRAFT" == dflash2 ]]; then exec bash "${BASH_SOURCE[0]}" --drafter; fi

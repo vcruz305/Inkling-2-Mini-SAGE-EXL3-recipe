@@ -1,12 +1,12 @@
 # Inkling-2-Mini-SAGE-EXL3-recipe
 
 Serving recipes for **Inkling 2 Mini SAGE EXL3 4.23 bpw** on the ExLlamaV3 fork behind TabbyAPI,
-with speculative decode from the pack's built-in MTP draft head (the default) or the separate DFlash2 drafter. One folder per setup; each folder is
+with speculative decode from the pack's built-in MTP draft head (the default in `rtx-4090/`) or the separate DFlash2 drafter (the default in `dgx-spark/`). One folder per setup; each folder is
 self-contained and its README carries the numbers measured on that setup.
 
 **Model (Hugging Face):** <https://huggingface.co/vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw> (revision `44c78c9d229b`)
 
-**Optional drafter:** <https://huggingface.co/incoai/Inkling-2-Mini-DFlash2> (revision `4f9088ea66c2`)
+**DFlash2 drafter:** <https://huggingface.co/incoai/Inkling-2-Mini-DFlash2> (revision `4f9088ea66c2`)
 
 **Engine (ExLlamaV3 fork):** <https://github.com/vcruz305/exllamav3> (commit `819b039c5703`)
 
@@ -14,8 +14,8 @@ self-contained and its README carries the numbers measured on that setup.
 
 | Setup | Folder | Engine | Status |
 |---|---|---|---|
-| One 24 GB card | [`rtx-4090/`](rtx-4090/README.md) | ExLlamaV3 fork + TabbyAPI, MTP or DFlash2 draft | **Measured, serving** |
-| One DGX Spark | [`dgx-spark/`](dgx-spark/README.md) | ExLlamaV3 fork + TabbyAPI, MTP or DFlash2 draft | **Measured, serving** |
+| One 24 GB card | [`rtx-4090/`](rtx-4090/README.md) | ExLlamaV3 fork + TabbyAPI, MTP draft (DFlash2 optional) | **Measured, serving** |
+| One DGX Spark | [`dgx-spark/`](dgx-spark/README.md) | ExLlamaV3 fork + TabbyAPI, DFlash2 draft (MTP optional) | **Measured, serving** |
 
 ## Quick start
 
@@ -30,7 +30,7 @@ bash scripts/guard.sh watch
 bash scripts/smoke.sh
 ```
 
-The API is OpenAI-compatible at `http://127.0.0.1:8000/v1`.
+The API is OpenAI-compatible at `http://127.0.0.1:8000/v1`. Requests that set no temperature get 0.7.
 
 ## Measured speed
 

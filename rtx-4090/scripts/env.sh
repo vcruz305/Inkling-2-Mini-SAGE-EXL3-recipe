@@ -52,6 +52,8 @@ export CACHE_SIZE="${CACHE_SIZE:-$MAX_SEQ_LEN}" # KV pool, multiple of 256, >= M
 export CACHE_MODE="${CACHE_MODE:-FP16}"        # quantized KV (Q8/Q6/Q4) is untested with this port
 export MAX_BATCH_SIZE="${MAX_BATCH_SIZE:-1}"   # concurrent streams; above 1 the draft runs only while one stream is active
 export CHUNK_SIZE="${CHUNK_SIZE:-2048}"
+# Sampling temperature used only when a client sends none (the pack's generation_config.json says 1.0).
+export TEMPERATURE="${TEMPERATURE:-0.7}"
 # Speculative decode. mtp = the draft head that ships inside the pack (mtp.safetensors, 237 MB; the
 # default, no second download). dflash2 = the separate DFlash2 drafter in $DRAFT_DIR
 # (bash scripts/download_and_verify.sh --drafter). off = plain one-token-per-step decode.

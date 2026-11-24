@@ -52,10 +52,13 @@ export CACHE_SIZE="${CACHE_SIZE:-$MAX_SEQ_LEN}" # KV pool, multiple of 256, >= M
 export CACHE_MODE="${CACHE_MODE:-FP16}"        # quantized KV (Q8/Q6/Q4) is untested with this port
 export MAX_BATCH_SIZE="${MAX_BATCH_SIZE:-1}"   # concurrent streams; above 1 the draft runs only while one stream is active
 export CHUNK_SIZE="${CHUNK_SIZE:-2048}"
-# Speculative decode. mtp = the draft head that ships inside the pack (mtp.safetensors, 237 MB; the
-# default, no second download). dflash2 = the separate DFlash2 drafter in $DRAFT_DIR
-# (bash scripts/download_and_verify.sh --drafter). off = plain one-token-per-step decode.
-export DRAFT="${DRAFT:-mtp}"
+# Sampling temperature used only when a client sends none (the pack's generation_config.json says 1.0).
+export TEMPERATURE="${TEMPERATURE:-0.7}"
+# Speculative decode. dflash2 = the separate DFlash2 drafter in $DRAFT_DIR (the default on this
+# setup for one stream; download_and_verify.sh fetches it). mtp = the draft head that ships inside
+# the pack (mtp.safetensors, 237 MB; the default when MAX_BATCH_SIZE is above 1, because DFlash2
+# slows concurrent streams). off = plain one-token-per-step decode.
+if (( MAX_BATCH_SIZE > 1 )); then export DRAFT="${DRAFT:-mtp}"; else export DRAFT="${DRAFT:-dflash2}"; fi
 
 # Fork switches. serve.sh forwards one only when you set it; unset means the fork default, which
 # is what was measured. The first group selects the fast decode path (all on; 0 falls back to a

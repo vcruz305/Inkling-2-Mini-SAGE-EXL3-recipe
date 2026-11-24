@@ -12,19 +12,18 @@ Run from this folder:
 
 ```bash
 bash scripts/setup.sh                # venv + fork + TabbyAPI, compiles the CUDA extension
-bash scripts/download_and_verify.sh  # 15.1 GB pack via hf_xet, then sha256 of every file
-bash scripts/serve.sh                # starts detached, MTP draft on
+bash scripts/download_and_verify.sh  # 15.1 GB pack and the 990 MB DFlash2 drafter via hf_xet, then sha256 of every file
+bash scripts/serve.sh                # starts detached, DFlash2 draft on
 bash scripts/guard.sh watch          # returns when the endpoint answers
 bash scripts/smoke.sh                # one chat request, must print SMOKE PASS
 python3 scripts/bench.py             # optional: the speed table below
 ```
 
-To serve with the DFlash2 drafter instead (990 MB, public, Apache-2.0):
+The [DFlash2 drafter](https://huggingface.co/incoai/Inkling-2-Mini-DFlash2) (public, Apache-2.0) is the default here because it measured fastest for one stream. To use the pack's built-in MTP head instead, with no second download:
 
 ```bash
-bash scripts/download_and_verify.sh --drafter
 bash scripts/guard.sh stop
-DRAFT=dflash2 bash scripts/serve.sh
+DRAFT=mtp bash scripts/serve.sh
 ```
 
 The API is OpenAI-compatible at `http://127.0.0.1:8000/v1`. Clients that append
@@ -38,12 +37,12 @@ ungated, so no token is needed.
 
 | Setting | Value | Why |
 |---|---|---|
-| `DRAFT` | `mtp` | Speculative decode with the draft head inside the pack (`mtp.safetensors`). `DRAFT=dflash2` uses the separate DFlash2 drafter; `DRAFT=off` serves one token per step. |
+| `DRAFT` | `dflash2` | Speculative decode with the separate DFlash2 drafter. `DRAFT=mtp` uses the draft head inside the pack (`mtp.safetensors`) and becomes the default when `MAX_BATCH_SIZE` is above 1; `DRAFT=off` serves one token per step. |
 | `MAX_SEQ_LEN` / `CACHE_SIZE` | 24576 / 24576 | The context every number below was taken at. Larger values are untested here. |
 | `CACHE_MODE` | `FP16` | The only KV cache type tested with this architecture. |
 | `CHUNK_SIZE` | 2048 | Prefill chunk used for the prefill figures. |
 | `MAX_BATCH_SIZE` | 1 | The single-stream numbers were taken at 1. Raise it for concurrent streams (see Concurrency, measured at 4). |
-| sampling fallback | temperature 1.0 | The pack's `generation_config.json` value, applied only when a client sends none. |
+| sampling fallback | temperature 0.7 | `TEMPERATURE`, applied only when a client sends none. The pack's own `generation_config.json` value is 1.0. The speed tables below were taken at 0 and 1. |
 
 `scripts/env.sh` holds these and the pins. The fork's own switches (`INKLING2_*`) are left at
 their defaults, which is what was measured; `serve.sh` forwards one only if you export it and
@@ -125,7 +124,7 @@ The MTP draft runs while one stream is active, stands down when a second arrives
 afterwards (single-stream speed after the 4-stream rounds: 56.8–90.5 tok/s). With two or more
 streams the draft setting therefore makes no difference.
 
-**Use `DRAFT=mtp` or `off` for concurrent serving, not `dflash2`.** With the DFlash2 drafter
+**Concurrent serving uses `DRAFT=mtp` (automatic when `MAX_BATCH_SIZE` is above 1) or `off`, not `dflash2`.** With the DFlash2 drafter
 loaded, concurrent streams were slower than one stream: 38.2–52.3 tok/s total at 2 streams and
 46.4–50.3 at 4. Its single-stream speed at `MAX_BATCH_SIZE=4` was unaffected (57.8–111.4 tok/s).
 
@@ -151,15 +150,15 @@ loaded, concurrent streams were slower than one stream: 38.2–52.3 tok/s total 
 
 - `pip install exllamav3` or use a stock wheel: the Inkling2Loop architecture and the draft head exist only in the fork commit pinned in `scripts/env.sh`. `bash scripts/setup.sh --check` verifies the import.
 - Install TabbyAPI's GPU extras: they replace torch and the fork.
-- Hand-edit `draft_model_name`: `DRAFT=mtp` needs no second model, and `DRAFT=dflash2` wires the drafter in for you.
-- Serve concurrent streams with `DRAFT=dflash2`.
+- Hand-edit `draft_model_name`: `DRAFT=dflash2` wires the drafter in for you, and `DRAFT=mtp` needs no second model.
+- Force `DRAFT=dflash2` together with `MAX_BATCH_SIZE` above 1.
 
 ## Runtime identity
 
 | Component | Pin |
 |---|---|
 | Pack | `vcruz305/Inkling-2-Mini-SAGE-REXL3-4.23bpw` @ `44c78c9d229b43dd45e41506071b9f5f939bed44` |
-| DFlash2 drafter (optional) | [`incoai/Inkling-2-Mini-DFlash2`](https://huggingface.co/incoai/Inkling-2-Mini-DFlash2) @ `4f9088ea66c21f2b99ed657d1941c306b03e84d2` |
+| DFlash2 drafter (default draft) | [`incoai/Inkling-2-Mini-DFlash2`](https://huggingface.co/incoai/Inkling-2-Mini-DFlash2) @ `4f9088ea66c21f2b99ed657d1941c306b03e84d2` |
 | ExLlamaV3 fork | [`vcruz305/exllamav3`](https://github.com/vcruz305/exllamav3) @ `819b039c5703ece8dec7c0ac0f4fe4e6ec0ec9c1` |
 | TabbyAPI | `vcruz305/tabbyAPI` @ `a2898191eed710b55066d699ce829a976b4b3272` |
 | PyTorch / CUDA | torch 2.13.0+cu130, CUDA 13.0 toolkit |

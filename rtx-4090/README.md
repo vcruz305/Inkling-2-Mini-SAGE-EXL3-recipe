@@ -43,7 +43,7 @@ ungated, so no token is needed.
 | `CACHE_MODE` | `FP16` | The only KV cache type tested with this architecture. |
 | `CHUNK_SIZE` | 2048 | Prefill chunk used for the prefill figures. |
 | `MAX_BATCH_SIZE` | 1 | The single-stream numbers were taken at 1. Raise it for concurrent streams (see Concurrency, measured at 4). |
-| sampling fallback | temperature 1.0 | The pack's `generation_config.json` value, applied only when a client sends none. |
+| sampling fallback | temperature 0.7 | `TEMPERATURE`, applied only when a client sends none. The pack's own `generation_config.json` value is 1.0. The speed tables below were taken at 0 and 1. |
 
 `scripts/env.sh` holds these and the pins. The fork's own switches (`INKLING2_*`) are left at
 their defaults, which is what was measured; `serve.sh` forwards one only if you export it and
